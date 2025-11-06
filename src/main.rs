@@ -71,8 +71,6 @@ fn main() -> anyhow::Result<()> {
         .expect(&format!("specified target path is not inside {}", root_path.display()));
     let hostname = cli.hostname.unwrap_or_else(|| gethostname().into_string().expect("failed to parse hostname of current device into UTF-8"));
 
-    eprintln!("target = {:?}", target_path);
-
     let mut tera = Tera::new(
     source_path
             .join("templates/**/*.tera")
@@ -84,8 +82,6 @@ fn main() -> anyhow::Result<()> {
     ctx.insert("hostname", &hostname);
 
     let server_config_dir = source_path.join("servers").join(hostname);
-
-    eprintln!("{:?}", server_config_dir);
 
     for result in WalkDir::new(&server_config_dir) {
         let entry = result?;
