@@ -34,6 +34,17 @@ enum Command {
     Unpack(UnpackCmd),
 }
 
+impl Exec for Command {
+    fn exec(&self, inv: &Invocation) -> anyhow::Result<()> {
+        match self {
+            Command::Add(inner) => inner.exec(&inv),
+            Command::Init(inner) => inner.exec(&inv),
+            Command::Status(inner) => inner.exec(&inv),
+            Command::Unpack(inner) => inner.exec(&inv),
+        }
+    }
+}
+
 pub trait Exec {
     fn exec(&self, inv: &Invocation) -> anyhow::Result<()>;
 }
@@ -92,11 +103,6 @@ fn main() -> anyhow::Result<()> {
         target_path,
     };
 
-    match cli.command {
-        Command::Add(inner) => inner.exec(&inv),
-        Command::Init(inner) => inner.exec(&inv),
-        Command::Status(inner) => inner.exec(&inv),
-        Command::Unpack(inner) => inner.exec(&inv),
-    }
+    cli.command.exec(&inv)
 }
 
