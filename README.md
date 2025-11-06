@@ -13,4 +13,4 @@ and more performant.
 
 ## License
 
-This repository is liceensed under the MIT license.
+This repository is licensed under the MIT license.
