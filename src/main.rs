@@ -48,6 +48,8 @@ pub struct Invocation {
 
 fn main() -> anyhow::Result<()> {
 
+    env_logger::init();
+
     let homedir = std::env::home_dir().expect("could not determine the home directory of the current user");
 
     let cli = Cli::parse();
