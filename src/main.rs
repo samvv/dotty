@@ -1,9 +1,14 @@
-use std::{io::Write, path::{Path, PathBuf}};
+
+mod util;
+mod cmd;
+
+use std::path::{Path, PathBuf};
 
 use gethostname::gethostname;
-use tera::Tera;
-use clap::Parser;
-use walkdir::WalkDir;
+use clap::{Parser, Subcommand};
+
+use crate::util::PathExt;
+use crate::cmd::{AddCmd, InitCmd, StatusCmd, UnpackCmd};
 
 #[derive(Parser)]
 struct Cli {
@@ -17,26 +22,28 @@ struct Cli {
     target: Option<PathBuf>,
     #[arg(long, help = "Select anther hostname than that of the current machine")]
     hostname: Option<String>,
+    #[command(subcommand)]
+    command: Command,
 }
 
-trait PathExt {
-    fn join_inside<P: AsRef<Path>>(&self, other: P) -> Option<PathBuf>;
+#[derive(Subcommand)]
+enum Command {
+    Add(AddCmd),
+    Init(InitCmd),
+    Status(StatusCmd),
+    Unpack(UnpackCmd),
 }
 
-impl PathExt for PathBuf {
-    fn join_inside<P: AsRef<Path>>(&self, other: P) -> Option<PathBuf> {
-        let other = other.as_ref();
-        if other.is_absolute() {
-            let is_inside_self = pathdiff::diff_paths(other, self).is_some();
-            if is_inside_self {
-                Some(other.to_path_buf())
-            } else {
-                None // Or an error
-            }
-        } else {
-            Some(self.join(other))
-        }
-    }
+pub trait Exec {
+    fn exec(&self, inv: &Invocation) -> anyhow::Result<()>;
+}
+
+pub struct Invocation {
+    user_mode: bool,
+    root_path: PathBuf,
+    source_path: PathBuf,
+    target_path: PathBuf,
+    hostname: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -71,66 +78,19 @@ fn main() -> anyhow::Result<()> {
         .expect(&format!("specified target path is not inside {}", root_path.display()));
     let hostname = cli.hostname.unwrap_or_else(|| gethostname().into_string().expect("failed to parse hostname of current device into UTF-8"));
 
-    let mut tera = Tera::new(
-    source_path
-            .join("templates/**/*.tera")
-            .to_str()
-            .expect("received a source path with weird characters")
-    )?;
-
-    let mut ctx = tera::Context::new();
-    ctx.insert("hostname", &hostname);
-
-    let server_config_dir = source_path.join("servers").join(hostname);
-
-    for result in WalkDir::new(&server_config_dir) {
-        let entry = result?;
-        let input_path = entry.path(); // MUST be relative to server_config_dir
-        if !entry.file_type().is_file() {
-            if !entry.file_type().is_dir() {
-                eprintln!("Skipping non-regular file {}", input_path.to_string_lossy());
-            }
-            continue;
-        }
-        let rel_input_path = pathdiff::diff_paths(&input_path, &server_config_dir).unwrap();
-        let ext_str = match input_path.extension().map(|x| x.to_str()) {
-            None => None,
-            Some(None) => {
-                eprintln!("Failed to write {:?} because the path extensions contains invalid UTF-8 characters", input_path);
-                continue;
-            },
-            Some(Some(s)) => Some(s),
-        };
-        match ext_str {
-            Some("tera") => {
-                let input = std::fs::read_to_string(input_path)?;
-                let output = tera.render_str(&input, &ctx)?;
-                let output_path = target_path.join(remove_extension(&rel_input_path));
-                eprintln!("Writing {}", output_path.to_string_lossy());
-                std::fs::create_dir_all(output_path.parent().unwrap())?; // FIXME?
-                let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(&output_path)?;
-                file.write_all(output.as_bytes())?;
-            },
-            _ => {
-                let output_path = target_path.join(&rel_input_path);
-                eprintln!("Writing {}", output_path.to_string_lossy());
-                std::fs::create_dir_all(output_path.parent().unwrap())?;
-                std::fs::copy(input_path, output_path)?;
-            }
-        }
+    let inv = Invocation {
+        hostname,
+        user_mode,
+        root_path,
+        source_path,
+        target_path,
     };
 
-    Ok(())
-
-}
-
-fn remove_extension(path: &Path) -> PathBuf {
-    let stripped = match path.file_stem() {
-        Some(stem) => stem,
-        None => return path.to_path_buf(),
-    };
-    match path.parent() {
-        None => stripped.into(),
-        Some(parent) => parent.join(stripped),
+    match cli.command {
+        Command::Add(inner) => inner.exec(&inv),
+        Command::Init(inner) => inner.exec(&inv),
+        Command::Status(inner) => inner.exec(&inv),
+        Command::Unpack(inner) => inner.exec(&inv),
     }
 }
+
