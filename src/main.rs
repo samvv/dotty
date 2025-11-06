@@ -56,7 +56,8 @@ fn main() -> anyhow::Result<()> {
     let user_mode = cli.user;
     let root_path = std::path::absolute(cli.root)
         .expect("failed to convert '--root' flag value to an absolute path");
-    let source_path = root_path
+    let source_path = std::path::absolute(
+        root_path
         .join_inside(
             cli.source.unwrap_or(
                 if user_mode {
@@ -66,18 +67,21 @@ fn main() -> anyhow::Result<()> {
                 }
             )
         )
-        .expect(&format!("specified target path is not inside {}", root_path.display()));
-    let target_path = root_path
-        .join_inside(
-            cli.target.unwrap_or(
-                if user_mode {
-                    homedir
-                } else {
-                    ".".into()
-                }
+        .expect(&format!("specified target path is not inside {}", root_path.display()))
+    ).unwrap();
+    let target_path = std::path::absolute(
+        root_path
+            .join_inside(
+                cli.target.unwrap_or(
+                    if user_mode {
+                        homedir
+                    } else {
+                        ".".into()
+                    }
+                )
             )
-        )
-        .expect(&format!("specified target path is not inside {}", root_path.display()));
+            .expect(&format!("specified target path is not inside {}", root_path.display()))
+    ).unwrap();
     let hostname = cli.hostname.unwrap_or_else(|| gethostname().into_string().expect("failed to parse hostname of current device into UTF-8"));
 
     let inv = Invocation {
