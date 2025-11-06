@@ -2,7 +2,7 @@
 mod util;
 mod cmd;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gethostname::gethostname;
 use clap::{Parser, Subcommand};
