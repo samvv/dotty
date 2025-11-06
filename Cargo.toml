@@ -1,0 +1,12 @@
+[package]
+name = "dotty"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.51", features = ["cargo", "derive"] }
+gethostname = "1.1.0"
+pathdiff = "0.2.3"
+tera = "1.20.1"
+walkdir = "2.5.0"
