@@ -1,5 +1,7 @@
 
-use std::io::Write;
+use std::fmt::write;
+use std::io::{Read, Write};
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
@@ -46,23 +48,31 @@ impl Exec for UnpackCmd {
                 },
                 Some(Some(s)) => Some(s),
             };
-            match ext_str {
+            let (output_path, output) = match ext_str {
                 Some("tera") => {
                     let input = std::fs::read_to_string(input_path)?;
                     let output = tera.render_str(&input, &ctx)?;
                     let output_path = inv.target_path.join(remove_extension(&rel_input_path));
-                    log::info!("Writing {}", output_path.to_string_lossy());
-                    std::fs::create_dir_all(output_path.parent().unwrap())?; // FIXME?
-                    let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(&output_path)?;
-                    file.write_all(output.as_bytes())?;
+                    (output_path, output.into_bytes())
                 },
                 _ => {
                     let output_path = inv.target_path.join(&rel_input_path);
-                    log::info!("Writing {}", output_path.to_string_lossy());
-                    std::fs::create_dir_all(output_path.parent().unwrap())?;
-                    std::fs::copy(input_path, output_path)?;
+                    let bytes = read_to_bytes(input_path)?;
+                    (output_path, bytes)
                 }
+            };
+            if !inv.force
+                && std::fs::exists(&output_path)?
+                && !inquire::Confirm::new(&format!("Path {} exists. Do you want to overwrite?", output_path.display()))
+                    .with_default(false)
+                    .prompt()
+                    .unwrap() {
+                continue;
             }
+            log::info!("Writing {}", output_path.to_string_lossy());
+            std::fs::create_dir_all(output_path.parent().unwrap())?; // FIXME?
+            let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(&output_path)?;
+            file.write_all(&output)?;
         };
 
         Ok(())
@@ -79,3 +89,12 @@ fn remove_extension(path: &Path) -> PathBuf {
         Some(parent) => parent.join(stripped),
     }
 }
+
+fn read_to_bytes(path: &Path) -> std::io::Result<Vec<u8>> {
+    let metadata = std::fs::metadata(path)?;
+    let mut file = std::fs::File::open(path)?;
+    let mut buf = Vec::with_capacity(metadata.size().try_into().expect("file too large to keep in memory"));
+    file.read_to_end(&mut buf)?;
+    Ok(buf)
+}
+

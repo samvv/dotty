@@ -24,6 +24,8 @@ struct Cli {
     hostname: Option<String>,
     #[command(subcommand)]
     command: Command,
+    #[clap(long, help = "Do not ask for confirmations")]
+    force: bool,
 }
 
 #[derive(Subcommand)]
@@ -55,6 +57,7 @@ pub struct Invocation {
     source_path: PathBuf,
     target_path: PathBuf,
     hostname: String,
+    force: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -64,6 +67,7 @@ fn main() -> anyhow::Result<()> {
     let homedir = std::env::home_dir().expect("could not determine the home directory of the current user");
 
     let cli = Cli::parse();
+    let force = cli.force;
     let user_mode = cli.user;
     let root_path = std::path::absolute(cli.root)
         .expect("failed to convert '--root' flag value to an absolute path");
@@ -101,6 +105,7 @@ fn main() -> anyhow::Result<()> {
         root_path,
         source_path,
         target_path,
+        force,
     };
 
     cli.command.exec(&inv)
