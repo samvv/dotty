@@ -33,7 +33,7 @@ impl Exec for UnpackCmd {
             let input_path = entry.path(); // MUST be relative to server_config_dir
             if !entry.file_type().is_file() {
                 if !entry.file_type().is_dir() {
-                    eprintln!("Skipping non-regular file {}", input_path.to_string_lossy());
+                    log::warn!("Skipping non-regular file {}", input_path.to_string_lossy());
                 }
                 continue;
             }
@@ -41,7 +41,7 @@ impl Exec for UnpackCmd {
             let ext_str = match input_path.extension().map(|x| x.to_str()) {
                 None => None,
                 Some(None) => {
-                    eprintln!("Failed to write {:?} because the path extensions contains invalid UTF-8 characters", input_path);
+                    log::error!("Failed to write {:?} because the path extensions contains invalid UTF-8 characters", input_path);
                     continue;
                 },
                 Some(Some(s)) => Some(s),
@@ -51,19 +51,20 @@ impl Exec for UnpackCmd {
                     let input = std::fs::read_to_string(input_path)?;
                     let output = tera.render_str(&input, &ctx)?;
                     let output_path = inv.target_path.join(remove_extension(&rel_input_path));
-                    eprintln!("Writing {}", output_path.to_string_lossy());
+                    log::info!("Writing {}", output_path.to_string_lossy());
                     std::fs::create_dir_all(output_path.parent().unwrap())?; // FIXME?
                     let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(&output_path)?;
                     file.write_all(output.as_bytes())?;
                 },
                 _ => {
                     let output_path = inv.target_path.join(&rel_input_path);
-                    eprintln!("Writing {}", output_path.to_string_lossy());
+                    log::info!("Writing {}", output_path.to_string_lossy());
                     std::fs::create_dir_all(output_path.parent().unwrap())?;
                     std::fs::copy(input_path, output_path)?;
                 }
             }
         };
+
         Ok(())
     }
 }
