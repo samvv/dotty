@@ -1,8 +1,7 @@
 # Dotty
 
 Dotty is a work-in-progress configuration file manager for Linux systems. It is
-highly similar to [`etckeeper`][etckeeper], but intends to be more customizable
-and more performant.
+highly similar to [`etckeeper`][etckeeper], but intends to be more customizable.
 
 [etckeeper]: https://etckeeper.branchable.com/
 
