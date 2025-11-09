@@ -48,30 +48,32 @@ impl Exec for UnpackCmd {
                 },
                 Some(Some(s)) => Some(s),
             };
+            let input = read_to_bytes(input_path)?;
             let (output_path, output) = match ext_str {
                 Some("tera") => {
-                    let input = std::fs::read_to_string(input_path)?;
-                    let output = tera.render_str(&input, &ctx)?;
+                    let input_str = String::from_utf8_lossy(&input);
+                    let output = tera.render_str(&input_str, &ctx)?;
                     let output_path = inv.target_path.join(remove_extension(&rel_input_path));
                     (output_path, output.into_bytes())
                 },
                 _ => {
                     let output_path = inv.target_path.join(&rel_input_path);
-                    let bytes = read_to_bytes(input_path)?;
-                    (output_path, bytes)
+                    (output_path, input.clone())
                 }
             };
-            if !inv.force
-                && std::fs::exists(&output_path)?
-                && !inquire::Confirm::new(&format!("Path {} exists. Do you want to overwrite?", output_path.display()))
-                    .with_default(false)
-                    .prompt()
-                    .unwrap() {
+            if std::fs::exists(&output_path)?
+                && (input == output
+                    || (!inv.force
+                        && !inquire::Confirm::new(&format!("Path {} exists. Do you want to overwrite?", output_path.display()))
+                            .with_default(false)
+                            .prompt()
+                            .unwrap())) {
+                log::debug!("{} skipped", input_path.display());
                 continue;
             }
-            log::info!("Writing {}", output_path.to_string_lossy());
-            std::fs::create_dir_all(output_path.parent().unwrap())?; // FIXME?
-            let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(&output_path)?;
+            log::info!("Writing {}", output_path.display());
+            std::fs::create_dir_all(output_path.parent().unwrap())?;
+            let mut file = std::fs::OpenOptions::new().write(true).truncate(true).create(true).open(&output_path)?;
             file.write_all(&output)?;
         };
 
