@@ -14,7 +14,7 @@ use crate::cmd::{AddCmd, CommitCmd, InitCmd, StatusCmd, UnpackCmd};
 struct Cli {
     #[arg(short, long, help = "Configure the home directory instead of the system")]
     user: bool,
-    #[arg(short, long, default_value = "/", help = "Act as if chroot-ing into this directory")]
+    #[arg(short, long, default_value = "/", help = "Act as if chrooting into this directory", env = "DOTTY_ROOT")]
     root: PathBuf,
     #[arg(short, long, help = "The path to the original configuration files")]
     source: Option<PathBuf>,
