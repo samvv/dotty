@@ -8,7 +8,7 @@ use gethostname::gethostname;
 use clap::{Parser, Subcommand};
 
 use crate::util::PathExt;
-use crate::cmd::{AddCmd, InitCmd, StatusCmd, UnpackCmd};
+use crate::cmd::{AddCmd, CommitCmd, InitCmd, StatusCmd, UnpackCmd};
 
 #[derive(Parser)]
 struct Cli {
@@ -20,6 +20,8 @@ struct Cli {
     source: Option<PathBuf>,
     #[arg(short, long, help = "Where to write the configuration files to")]
     target: Option<PathBuf>,
+    #[arg(long, help = "Where to store configuration file metadata")]
+    meta_dir: Option<PathBuf>,
     #[arg(long, help = "Select anther hostname than that of the current machine")]
     hostname: Option<String>,
     #[command(subcommand)]
@@ -31,6 +33,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     Add(AddCmd),
+    Commit(CommitCmd),
     Init(InitCmd),
     Status(StatusCmd),
     Unpack(UnpackCmd),
@@ -40,6 +43,7 @@ impl Exec for Command {
     fn exec(&self, inv: &Invocation) -> anyhow::Result<()> {
         match self {
             Command::Add(inner) => inner.exec(&inv),
+            Command::Commit(inner) => inner.exec(&inv),
             Command::Init(inner) => inner.exec(&inv),
             Command::Status(inner) => inner.exec(&inv),
             Command::Unpack(inner) => inner.exec(&inv),
@@ -54,10 +58,26 @@ pub trait Exec {
 pub struct Invocation {
     user_mode: bool,
     root_path: PathBuf,
+    meta_dir: PathBuf,
+    git_dir: PathBuf,
     source_path: PathBuf,
     target_path: PathBuf,
     hostname: String,
     force: bool,
+}
+
+impl Invocation {
+
+    pub fn repo(&self) -> anyhow::Result<git2::Repository> {
+        let git_dir = self.meta_dir.join("git");
+        std::fs::create_dir_all(&git_dir)?;
+        Ok(match git2::Repository::open(&git_dir) {
+            Ok(repo) => repo,
+            Err(error) if error.code() == git2::ErrorCode::NotFound => git2::Repository::init_bare(&git_dir)?,
+            Err(error) => return Err(error.into()),
+        })
+    }
+
 }
 
 fn main() -> anyhow::Result<()> {
@@ -67,10 +87,13 @@ fn main() -> anyhow::Result<()> {
     let homedir = std::env::home_dir().expect("could not determine the home directory of the current user");
 
     let cli = Cli::parse();
+
     let force = cli.force;
     let user_mode = cli.user;
+
     let root_path = std::path::absolute(cli.root)
         .expect("failed to convert '--root' flag value to an absolute path");
+
     let source_path = std::path::absolute(
         root_path
         .join_inside(
@@ -84,6 +107,7 @@ fn main() -> anyhow::Result<()> {
         )
         .expect(&format!("specified target path is not inside {}", root_path.display()))
     ).unwrap();
+
     let target_path = std::path::absolute(
         root_path
             .join_inside(
@@ -97,6 +121,13 @@ fn main() -> anyhow::Result<()> {
             )
             .expect(&format!("specified target path is not inside {}", root_path.display()))
     ).unwrap();
+
+    let meta_dir = std::path::absolute(
+        cli.meta_dir.unwrap_or(root_path.join(".dotty")),
+    ).unwrap();
+
+    let git_dir = meta_dir.join("git");
+
     let hostname = cli.hostname.unwrap_or_else(|| gethostname().into_string().expect("failed to parse hostname of current device into UTF-8"));
 
     let inv = Invocation {
@@ -104,6 +135,8 @@ fn main() -> anyhow::Result<()> {
         user_mode,
         root_path,
         source_path,
+        meta_dir,
+        git_dir,
         target_path,
         force,
     };
