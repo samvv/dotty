@@ -69,11 +69,10 @@ pub struct Invocation {
 impl Invocation {
 
     pub fn repo(&self) -> anyhow::Result<git2::Repository> {
-        let git_dir = self.meta_dir.join("git");
-        std::fs::create_dir_all(&git_dir)?;
-        Ok(match git2::Repository::open(&git_dir) {
+        std::fs::create_dir_all(&self.git_dir)?;
+        Ok(match git2::Repository::open(&self.git_dir) {
             Ok(repo) => repo,
-            Err(error) if error.code() == git2::ErrorCode::NotFound => git2::Repository::init_bare(&git_dir)?,
+            Err(error) if error.code() == git2::ErrorCode::NotFound => git2::Repository::init_bare(&self.git_dir)?,
             Err(error) => return Err(error.into()),
         })
     }
