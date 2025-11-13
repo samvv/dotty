@@ -8,8 +8,9 @@ pub struct InitCmd {
 }
 
 impl Exec for InitCmd {
-    fn exec(&self, _inv: &Invocation) -> anyhow::Result<()> {
-        todo!()
+    fn exec(&self, inv: &Invocation) -> anyhow::Result<()> {
+        let _ = inv.repo();
+        Ok(())
     }
 }
 
