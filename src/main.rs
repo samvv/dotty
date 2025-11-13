@@ -8,7 +8,7 @@ use gethostname::gethostname;
 use clap::{Parser, Subcommand};
 
 use crate::util::PathExt;
-use crate::cmd::{AddCmd, CommitCmd, InitCmd, LogCmd, StatusCmd, UnpackCmd};
+use crate::cmd::{AddCmd, CommitCmd, InitCmd, LogCmd, ResetCmd, StatusCmd, UnpackCmd};
 
 #[derive(Parser)]
 struct Cli {
@@ -36,6 +36,7 @@ enum Command {
     Commit(CommitCmd),
     Init(InitCmd),
     Log(LogCmd),
+    Reset(ResetCmd),
     Status(StatusCmd),
     Unpack(UnpackCmd),
 }
@@ -47,6 +48,7 @@ impl Exec for Command {
             Command::Commit(inner) => inner.exec(&inv),
             Command::Init(inner) => inner.exec(&inv),
             Command::Log(inner) => inner.exec(&inv),
+            Command::Reset(inner) => inner.exec(&inv),
             Command::Status(inner) => inner.exec(&inv),
             Command::Unpack(inner) => inner.exec(&inv),
         }
