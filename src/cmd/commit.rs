@@ -17,16 +17,6 @@ pub struct CommitCmd {
 impl Exec for CommitCmd {
     fn exec(&self, inv: &crate::Invocation) -> anyhow::Result<()> {
         let repo = inv.repo()?;
-        let message = match &self.message {
-            Some(text)  => text.clone(),
-            None => inquire::Editor::new(&format!("Commit message: Update config for {}", inv.hostname))
-                .with_predefined_text("\n# Lines starting with a '#' are ignored")
-                .prompt()?,
-        };
-        if message.trim().len() == 0 {
-            eprintln!("Operation cancelled due to empty commit message.");
-            return Ok(());
-        }
         let mut index = repo.index()?;
         let tree_oid = index.write_tree()?;
         let tree = repo.find_tree(tree_oid)?;
@@ -36,9 +26,35 @@ impl Exec for CommitCmd {
             Err(error) if error.code() == ErrorCode::UnbornBranch => None,
             Err(error) => return Err(error.into()),
         };
+        let is_empty = match &parent {
+            Some(commit) => repo.diff_tree_to_index(
+                Some(&commit.tree()?),
+                Some(&index),
+                None
+            )?.deltas().len() == 0,
+            None => index.is_empty(),
+        };
+        if is_empty {
+            eprintln!("No changes to commit.");
+            std::process::exit(1);
+        }
         let mut parents = Vec::new();
         if let Some(commit) = parent.as_ref() {
             parents.push(commit);
+        }
+        let message = match &self.message {
+            Some(text)  => text.clone(),
+            None => {
+                let short_msg = format!("Update config for {}", inv.hostname);
+                inquire::Editor::new(&format!("Commit message: {}", short_msg))
+                    .with_predefined_text(&format!("{}\n# Lines starting with a '#' are ignored", short_msg))
+                    .prompt()?
+            }
+        };
+        // FIXME ignore lines starting with '#'
+        if message.trim().len() == 0 {
+            eprintln!("Aborting commit due to empty commit message.");
+            std::process::exit(1);
         }
         let commit = repo.commit(
             Some("HEAD"),
