@@ -27,11 +27,12 @@ impl Exec for StatusCmd {
                     Delta::Renamed => eprintln!("R {} -> {}", delta.old_file().path().unwrap().display(), delta.new_file().path().unwrap().display()),
                     Delta::Deleted => eprintln!("D {}", delta.old_file().path().unwrap().display()),
                     Delta::Copied => eprintln!("C {}", delta.new_file().path().unwrap().display()),
-                    Delta::Ignored | Delta::Unmodified => {},
+                    Delta::Ignored => eprintln!("! {}", delta.old_file().path().unwrap().display()),
                     Delta::Modified | Delta::Typechange => eprintln!("M {}", delta.old_file().path().unwrap().display()),
                     Delta::Untracked => eprintln!("? {}", delta.old_file().path().unwrap().display()),
                     Delta::Unreadable => log::warn!("unable to read {}", delta.old_file().path().unwrap().display()),
                     Delta::Conflicted => eprintln!("U {}", delta.old_file().path().unwrap().display()),
+                    Delta::Unmodified => {},
                 }
             }
         }
