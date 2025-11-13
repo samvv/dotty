@@ -19,8 +19,12 @@ impl Exec for StatusCmd {
                 eprintln!("{}", String::from_utf8_lossy(&entry.path));
             }
         } else {
-            let head = repo.head()?.peel_to_commit()?;
-            let diff = repo.diff_tree_to_index(Some(&head.tree()?), Some(&index), None)?;
+            let old_tree = match repo.head() {
+                Ok(commit) => Some(&commit.peel_to_commit()?.tree()?),
+                Err(error) if error.code() == git2::ErrorCode::UnbornBranch => None,
+                Err(error) => return Err(error.into()),
+            };
+            let diff = repo.diff_tree_to_index(old_tree, Some(&index), None)?;
             for delta in diff.deltas() {
                 match delta.status() {
                     Delta::Added => eprintln!("A {}", delta.new_file().path().unwrap().display()),
