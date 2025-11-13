@@ -34,7 +34,7 @@ impl Exec for StatusCmd {
                     git2::Delta::Modified | git2::Delta::Typechange => eprintln!(" M {}", delta.old_file().path().unwrap().display()),
                     git2::Delta::Untracked => eprintln!("?? {}", delta.old_file().path().unwrap().display()),
                     git2::Delta::Unreadable => log::warn!("unable to read {}", delta.old_file().path().unwrap().display()),
-                    git2::Delta::Conflicted => eprintln!(" U {}", delta.old_file().path().unwrap().display()),
+                    git2::Delta::Conflicted => eprintln!("UU {}", delta.old_file().path().unwrap().display()),
                     git2::Delta::Unmodified => {},
                 }
             }
