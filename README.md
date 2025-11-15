@@ -30,8 +30,8 @@ The following environment variables are supported:
 
 The following global CLI flags are supported when invoking Dotty:
 
- - `--hostname` Overrides the name of the device that is being configured.
-   Defaults to the machine's hostname. Takes precedence over `DOTTY_HOSTNAME`.
+ - `--hostname` Same as the `DOTTY_HOSTNAME` environment variable. Takes
+   precedence over `DOTTY_HOSTNAME`.
  - `--root-dir` Same as the `DOTTY_ROOT` environment variable. Takes precedence
    over `DOTTY_ROOT`.
  - `--force` No not ask for confirmations when executing. Files will be
