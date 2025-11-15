@@ -34,7 +34,7 @@ The following global CLI flags are supported when invoking Dotty:
    precedence over `DOTTY_HOSTNAME`.
  - `--root-dir` Same as the `DOTTY_ROOT` environment variable. Takes precedence
    over `DOTTY_ROOT`.
- - `--force` No not ask for confirmations when executing. Files will be
+ - `--force` Do not ask for confirmations when executing. Files will be
    overwritten without question. This is potentially very dangerous and should
    generally only be used in scripts.
 
