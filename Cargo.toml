@@ -7,6 +7,7 @@ edition = "2024"
 anyhow = "1.0.100"
 byteorder = "1.5.0"
 clap = { version = "4.5.51", features = ["cargo", "derive", "env"] }
+colored = "3.0.0"
 env_logger = "0.11.8"
 gethostname = "1.1.0"
 git2 = "0.20.2"
