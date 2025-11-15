@@ -42,7 +42,8 @@ The following global CLI flags are supported when invoking Dotty:
 
 Initialize a new repository with the default settings.
 
-The repository will by default be initialized at `/.dotty`.
+The repository will by default be initialized at `/.dotty`, unless `DOTTY_ROOT`
+has been set.
 
 ### `dotty add <path..>`
 
@@ -78,7 +79,7 @@ This is identical to running `git log` and accepts the same flags except for `--
 
 ### `dotty list`
 
-A small utility to list what exactly is stored in the staging area.
+A small utility to list what exactly is stored in the latest commit.
 
 ## License
 
