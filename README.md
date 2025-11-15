@@ -12,14 +12,14 @@ similar to [`etckeeper`][etckeeper], but has some key differences.
 
 ## How It Works
 
-Dotty is written in Rust and wraps around a bare Git repository and provides
+Dotty is written in Rust, wraps around a bare Git repository and provides
 commands to add any file on the file system, without being hit by performance
 issues. It also tracks the metadata of files in a simple JSON file. This makes
 it possible, for example, to track files in `/etc`.
 
 ## Commands
 
-Note that most, if not all, commands require `sudo` to work.
+Note that most, if not all, commands require `sudo` to work if you're going to track something not in `$HOME`.
 
 The following environment variables are supported:
 
