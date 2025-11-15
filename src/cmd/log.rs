@@ -6,7 +6,7 @@ use crate::Exec;
 
 #[derive(Parser)]
 pub struct LogCmd {
-    #[arg(allow_hyphen_values = true, num_args = 0..)]
+    #[arg(trailing_var_arg = true, num_args = 0.., allow_hyphen_values = true)]
     flags: Vec<String>,
 }
 
