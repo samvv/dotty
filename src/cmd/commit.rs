@@ -10,7 +10,7 @@ use crate::Exec;
 pub struct CommitCmd {
     #[arg(short, long, help = "The message to add to the commit")]
     message: Option<String>,
-    #[arg(long, help = "Adjust the most recent commit")]
+    #[arg(short, long, help = "Adjust the most recent commit")]
     amend: bool,
 }
 
